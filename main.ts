@@ -8,11 +8,22 @@
 //
 // No network, no wall clock, no files outside the repository, so the
 // two grading runs write the same bytes.
-import { copyFileSync, mkdirSync } from "node:fs";
-import { join } from "node:path";
+import { copyFileSync, existsSync, mkdirSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const botDir = process.env.MAKEFUN_BOT_DIR ?? ".";
-const outDir = process.env.MAKEFUN_OUTPUT_DIR ?? "out";
+// Anchor relative paths at this script's own directory, not the process
+// working directory, so the program works wherever the grader runs it
+// from. Absolute env values pass through unchanged.
+const here = dirname(fileURLToPath(import.meta.url));
+const botDir = resolve(here, process.env.MAKEFUN_BOT_DIR ?? ".");
+const outDir = resolve(here, process.env.MAKEFUN_OUTPUT_DIR ?? "out");
+
+const source = join(botDir, "POST.json");
+if (!existsSync(source)) {
+  console.error(`main.ts: POST.json not found in ${botDir}`);
+  process.exit(1);
+}
 
 mkdirSync(outDir, { recursive: true });
-copyFileSync(join(botDir, "POST.json"), join(outDir, "POST.json"));
+copyFileSync(source, join(outDir, "POST.json"));
